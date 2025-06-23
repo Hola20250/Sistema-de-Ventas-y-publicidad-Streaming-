@@ -1,0 +1,748 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ventas y Publicidad Streaming</title>
+    <!-- Incluye Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Define la fuente Inter para todo el documento */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Color de fondo oscuro */
+            color: #e2e8f0; /* Color de texto claro */
+        }
+        /* Estilos generales para las tarjetas de planes */
+        .plan-card {
+            background-color: #2d3748; /* Color de fondo para las tarjetas */
+            border-radius: 0.75rem; /* Bordes redondeados */
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, border-color 0.2s;
+            border: 2px solid transparent; /* Borde por defecto transparente */
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .plan-card:hover {
+            transform: translateY(-5px); /* Pequeño efecto al pasar el ratón */
+        }
+        .plan-card.selected-netflix {
+            border-color: #e50914; /* Rojo Netflix cuando está seleccionado */
+        }
+        .plan-card.selected-hbo-max {
+            border-color: #9b59b6; /* Morado HBO Max cuando está seleccionado */
+        }
+        .plan-card.selected-amazon-prime {
+            border-color: #00A8E1; /* Azul Amazon Prime */
+        }
+        .plan-card.selected-disney-plus {
+            border-color: #1a62d7; /* Azul Disney+ */
+        }
+        .select-button {
+            background-color: #e50914; /* Rojo Netflix */
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, transform 0.2s;
+            width: 100%;
+            text-align: center;
+        }
+        .select-button.hbo-max {
+            background-color: #8e44ad; /* Morado HBO Max */
+        }
+        .select-button.amazon-prime {
+            background-color: #00A8E1; /* Azul Amazon Prime */
+        }
+        .select-button.disney-plus {
+            background-color: #1a62d7; /* Azul Disney+ */
+        }
+        .select-button:hover:not(:disabled) {
+            transform: scale(1.02);
+        }
+        .select-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .order-button { /* Estilo para el botón "Realizar Orden" y "Enviar Referencia" */
+            background-color: #3B82F6; /* Azul-600 */
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, transform 0.2s;
+            display: block;
+            margin-top: 1rem;
+            width: 100%;
+        }
+        .order-button:hover:not(:disabled) {
+            background-color: #2563EB; /* Blue-700 on hover */
+            transform: scale(1.02);
+        }
+        .order-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .message-box {
+            background-color: #4a5568;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            margin-top: 1.5rem;
+            opacity: 0; /* Por defecto invisible */
+            transition: opacity 0.3s ease-in-out;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .message-box.show {
+            opacity: 1; /* Visible cuando se activa */
+        }
+        .ad-banner {
+            background-color: #364052; /* Color de fondo del banner */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            height: 10rem; /* Altura fija para el banner */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Estilos para el logotipo en el anuncio */
+        .ad-logo {
+            position: absolute;
+            max-width: 90%; /* Ajusta el tamaño de la imagen dentro del contenedor */
+            max-height: 90%; /* Ajusta el tamaño de la imagen dentro del contenedor */
+            object-fit: contain; /* Asegura que la imagen quepa sin cortarse */
+            border-radius: 0.5rem; /* Bordes redondeados para las imágenes */
+            opacity: 0;
+            transition: opacity 1s ease-in-out; /* Transición suave para las imágenes */
+        }
+        .ad-logo.active {
+            opacity: 1;
+        }
+        /* La animación fadeInOut ya no es necesaria para el texto, se usará para la opacidad de la imagen */
+        /* @keyframes fadeInOut { /* Animación de fade para el texto * /
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(0); }
+            50% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 0; transform: translateY(20px); }
+        } */
+
+        /* Estilos para el recuadro de PayPal */
+        .paypal-box {
+            background-color: #3d485f; /* Un color ligeramente diferente para la caja de PayPal */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem; /* Margen ajustado para posicionamiento */
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .paypal-box .fab {
+            font-size: 4rem; /* Tamaño grande para el icono de PayPal */
+            color: #0070ba; /* Color azul de PayPal */
+            margin-bottom: 1rem;
+        }
+        .paypal-box .text-lg {
+            color: #f7fafc;
+            font-weight: bold;
+        }
+        /* Estilo para el botón de WhatsApp */
+        .whatsapp-button {
+            background-color: #25D366; /* Color de WhatsApp */
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem; /* Espacio entre el icono y el texto */
+            margin-top: 1rem;
+            width: 100%;
+        }
+        .whatsapp-button:hover:not(:disabled) {
+            background-color: #1DA851;
+            transform: scale(1.02);
+        }
+        .whatsapp-button .fab {
+            font-size: 1.2rem; /* Tamaño del icono de WhatsApp */
+        }
+        /* Estilo para el footer de WhatsApp */
+        .footer-whatsapp {
+            background-color: #2d3748; /* Color de fondo similar a las tarjetas */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .footer-whatsapp .fab.fa-whatsapp {
+            font-size: 3rem; /* Tamaño del icono de WhatsApp en el footer */
+            color: #25D366; /* Color verde de WhatsApp */
+            margin-bottom: 1rem;
+            /* Animación de pulso aplicada */
+            animation: pulse 2s infinite; /* Aplicar la animación de pulso */
+        }
+        .footer-whatsapp .text-xl {
+            font-weight: bold;
+        }
+        .footer-whatsapp .copyright-text {
+            color: #a0aec0; /* Un gris más suave para el copyright */
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        /* Keyframe animation for pulse effect - Increased scale for more movement */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2); /* Aumentado de 1.1 a 1.2 para más movimiento */
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+    <!-- Firebase SDKs (v9) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, updateDoc, deleteField, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+        // Global variables for Firebase
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous'; // Default to anonymous
+
+        // Retrieve Firebase configuration and app ID from environment variables
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Data Definitions (These could come from a backend in a real app) ---
+        const netflixPlans = [
+            { id: 'nf-basic', name: 'Netflix Básico', price: 7.99, features: ['Contenido en SD', '1 dispositivo', 'Sin anuncios'] },
+            { id: 'nf-standard', name: 'Netflix Estándar', price: 10.99, features: ['Contenido en HD', '2 dispositivos', 'Sin anuncios'] },
+            { id: 'nf-premium', name: 'Netflix Premium', price: 13.99, features: ['Contenido en UHD 4K', '4 dispositivos', 'Sin anuncios'] }
+        ];
+
+        const hboMaxPlans = [
+            { id: 'hbo-standard', name: 'HBO Max Estándar', price: 9.99, features: ['Contenido en HD', '3 dispositivos', 'Sin anuncios'] },
+            { id: 'hbo-premium', name: 'HBO Max Premium', price: 15.99, features: ['Contenido en UHD 4K', '5 dispositivos', 'Sin anuncios', 'Descargas'] }
+        ];
+
+        const amazonPrimePlans = [
+            { id: 'ap-basic', name: 'Amazon Prime Video', price: 8.99, features: ['Contenido en HD', '2 dispositivos', 'Incluye Prime Gaming', 'Envíos Rápidos'] },
+        ];
+
+        const disneyPlusPlans = [
+            { id: 'dp-standard', name: 'Disney+ Estándar', price: 7.99, features: ['Contenido en HD', '4 dispositivos', 'Descargas', 'Perfiles para Niños'] },
+            { id: 'dp-premium', name: 'Disney+ Premium', price: 10.99, features: ['Contenido en UHD 4K', '4 dispositivos', 'IMAX Enhanced', 'Descargas'] }
+        ];
+
+        // Define service logos to be displayed in the ad banner
+        const serviceLogos = [
+            { src: 'https://placehold.co/300x100/e50914/ffffff?text=NETFLIX', alt: 'Logo de Netflix' },
+            { src: 'https://placehold.co/300x100/9b59b6/ffffff?text=HBO%20MAX', alt: 'Logo de HBO Max' },
+            { src: 'https://placehold.co/300x100/00A8E1/ffffff?text=AMAZON%20PRIME', alt: 'Logo de Amazon Prime Video' },
+            { src: 'https://placehold.co/300x100/1a62d7/ffffff?text=DISNEY%2B', alt: 'Logo de Disney+' },
+        ];
+
+        // --- Global State ---
+        let selectedNetflixPlan = null;
+        let selectedHboMaxPlan = null;
+        let selectedAmazonPrimePlan = null;
+        let selectedDisneyPlusPlan = null;
+
+        // --- DOM Elements ---
+        const netflixPlansContainer = document.getElementById('netflixPlansContainer');
+        const hboMaxPlansContainer = document.getElementById('hboMaxPlansContainer');
+        const amazonPrimePlansContainer = document.getElementById('amazonPrimePlansContainer');
+        const disneyPlusPlansContainer = document.getElementById('disneyPlusPlansContainer');
+
+        const summaryNetflixPlan = document.getElementById('summaryNetflixPlan');
+        const summaryHboMaxPlan = document.getElementById('summaryHboMaxPlan');
+        const summaryAmazonPrimePlan = document.getElementById('summaryAmazonPrimePlan');
+        const summaryDisneyPlusPlan = document.getElementById('summaryDisneyPlusPlan');
+        const summaryTotal = document.getElementById('summaryTotal');
+
+        const orderButton = document.getElementById('orderButton');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        const adBanner = document.getElementById('adBanner');
+        const whatsappProofButton = document.getElementById('whatsappProofButton');
+        const userIdDisplay = document.getElementById('userIdDisplay'); // Reference to user ID display
+        const adLogoElement = document.getElementById('adLogo'); // Reference to the image element in the ad banner
+
+
+        // --- Functions ---
+
+        /**
+         * Renders the streaming plans for a given service.
+         * @param {Array<Object>} plans - Array of plan objects.
+         * @param {HTMLElement} container - The DOM element to render plans into.
+         * @param {string} serviceClass - Class to apply for service-specific styling (e.g., 'netflix', 'hbo-max').
+         * @param {string} colorClass - Tailwind CSS class for text color.
+         */
+        function renderPlans(plans, container, serviceClass, colorClass) {
+            container.innerHTML = ''; // Clear container
+            plans.forEach(plan => {
+                const planCard = document.createElement('div');
+                planCard.id = `plan-${plan.id}`;
+                // Check if the plan is currently selected for the respective service
+                let isSelected = false;
+                switch(serviceClass) {
+                    case 'netflix': isSelected = selectedNetflixPlan?.id === plan.id; break;
+                    case 'hbo-max': isSelected = selectedHboMaxPlan?.id === plan.id; break;
+                    case 'amazon-prime': isSelected = selectedAmazonPrimePlan?.id === plan.id; break;
+                    case 'disney-plus': isSelected = selectedDisneyPlusPlan?.id === plan.id; break;
+                }
+
+                planCard.className = `plan-card ${serviceClass} ${isSelected ? `selected-${serviceClass}` : ''}`;
+                planCard.innerHTML = `
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2 text-white">${plan.name}</h3>
+                        <p class="text-4xl font-extrabold ${colorClass} mb-4">$${plan.price.toFixed(2)}<span class="text-xl text-gray-400">/mes</span></p>
+                        <ul class="text-gray-300 space-y-2 text-sm">
+                            ${plan.features.map(feature => `<li>&#10003; ${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <button data-plan-id="${plan.id}" data-service="${serviceClass}" class="mt-6 select-button ${serviceClass}" ${isSelected ? 'disabled' : ''}>
+                        ${isSelected ? 'Plan Seleccionado' : 'Elegir Plan'}
+                    </button>
+                `;
+                container.appendChild(planCard);
+
+                // Add event listener to the button
+                planCard.querySelector('button').addEventListener('click', (event) => {
+                    const planId = event.target.dataset.planId;
+                    const service = event.target.dataset.service;
+                    let chosenPlan = null;
+
+                    switch(service) {
+                        case 'netflix':
+                            chosenPlan = netflixPlans.find(p => p.id === planId);
+                            selectedNetflixPlan = chosenPlan;
+                            break;
+                        case 'hbo-max':
+                            chosenPlan = hboMaxPlans.find(p => p.id === planId);
+                            selectedHboMaxPlan = chosenPlan;
+                            break;
+                        case 'amazon-prime':
+                            chosenPlan = amazonPrimePlans.find(p => p.id === planId);
+                            selectedAmazonPrimePlan = chosenPlan;
+                            break;
+                        case 'disney-plus':
+                            chosenPlan = disneyPlusPlans.find(p => p.id === planId);
+                            selectedDisneyPlusPlan = chosenPlan;
+                            break;
+                    }
+                    updateUI(); // Re-render everything to update selections
+                });
+            });
+        }
+
+        /**
+         * Updates the summary section and button state.
+         */
+        function updateSummary() {
+            let total = 0;
+
+            if (selectedNetflixPlan) {
+                summaryNetflixPlan.textContent = `${selectedNetflixPlan.name} ($${selectedNetflixPlan.price.toFixed(2)})`;
+                total += selectedNetflixPlan.price;
+            } else {
+                summaryNetflixPlan.textContent = 'Ninguno';
+            }
+
+            if (selectedHboMaxPlan) {
+                summaryHboMaxPlan.textContent = `${selectedHboMaxPlan.name} ($${selectedHboMaxPlan.price.toFixed(2)})`;
+                total += selectedHboMaxPlan.price;
+            } else {
+                summaryHboMaxPlan.textContent = 'Ninguno';
+            }
+
+            if (selectedAmazonPrimePlan) {
+                summaryAmazonPrimePlan.textContent = `${selectedAmazonPrimePlan.name} ($${selectedAmazonPrimePlan.price.toFixed(2)})`;
+                total += selectedAmazonPrimePlan.price;
+            } else {
+                summaryAmazonPrimePlan.textContent = 'Ninguno';
+            }
+
+            if (selectedDisneyPlusPlan) {
+                summaryDisneyPlusPlan.textContent = `${selectedDisneyPlusPlan.name} ($${selectedDisneyPlusPlan.price.toFixed(2)})`;
+                total += selectedDisneyPlusPlan.price;
+            } else {
+                summaryDisneyPlusPlan.textContent = 'Ninguno';
+            }
+
+            summaryTotal.textContent = `$${total.toFixed(2)}`;
+
+            // Enable order button only if at least one plan is selected
+            if (selectedNetflixPlan || selectedHboMaxPlan || selectedAmazonPrimePlan || selectedDisneyPlusPlan) {
+                orderButton.disabled = false;
+                orderButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                orderButton.disabled = true;
+                orderButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        /**
+         * Handles the order process, simulates PayPal redirection, and saves the order to Firestore.
+         */
+        async function handleOrder() {
+            if (!selectedNetflixPlan && !selectedHboMaxPlan && !selectedAmazonPrimePlan && !selectedDisneyPlusPlan) {
+                console.error("No hay planes seleccionados para la suscripción.");
+                showMessage('Por favor, selecciona al menos un plan antes de realizar la orden.', 'red');
+                return;
+            }
+
+            showMessage('Redirigiendo a PayPal para completar la orden...', 'yellow');
+
+            // Get the total amount for the PayPal link
+            const totalAmount = parseFloat(summaryTotal.textContent.replace('$', ''));
+            const currencyCode = 'USD'; // Assuming USD, could be dynamic
+
+            // Simulate PayPal redirection with pre-filled amount (example structure)
+            const paypalSimulatedUrl = `https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_xclick&amount=${totalAmount.toFixed(2)}&currency_code=${currencyCode}&business=your-paypal-email@example.com&item_name=Streaming%20Subscription`;
+            window.open(paypalSimulatedUrl, '_blank');
+
+            try {
+                // Simulate payment processing delay after redirection
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                console.log("Order placed:", {
+                    netflixPlan: selectedNetflixPlan,
+                    hboMaxPlan: selectedHboMaxPlan,
+                    amazonPrimePlan: selectedAmazonPrimePlan,
+                    disneyPlusPlan: selectedDisneyPlusPlan,
+                    total: totalAmount
+                });
+
+                // Save order to Firestore
+                if (db && auth.currentUser) { // Ensure db is initialized and user is authenticated
+                    try {
+                        const ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+                        await addDoc(ordersCollectionRef, {
+                            netflixPlan: selectedNetflixPlan ? { ...selectedNetflixPlan } : null, // Store a copy
+                            hboMaxPlan: selectedHboMaxPlan ? { ...selectedHboMaxPlan } : null, // Store a copy
+                            amazonPrimePlan: selectedAmazonPrimePlan ? { ...selectedAmazonPrimePlan } : null, // Store a copy
+                            disneyPlusPlan: selectedDisneyPlusPlan ? { ...selectedDisneyPlusPlan } : null, // Store a copy
+                            total: totalAmount,
+                            timestamp: serverTimestamp()
+                        });
+                        console.log("Order saved to Firestore successfully!");
+                        showMessage('¡Orden realizada con éxito y guardada! Disfruta de tu contenido.', 'green');
+                    } catch (e) {
+                        console.error("Error adding document to Firestore: ", e);
+                        showMessage('Error al guardar la orden. Inténtalo de nuevo.', 'red');
+                    }
+                } else {
+                    console.warn("Firestore not initialized or user not authenticated. Order not saved to database.");
+                    showMessage('Orden realizada, pero no se pudo guardar (modo demo/sin autenticación).', 'yellow');
+                }
+
+                // Clear selections after successful order
+                selectedNetflixPlan = null;
+                selectedHboMaxPlan = null;
+                selectedAmazonPrimePlan = null;
+                selectedDisneyPlusPlan = null;
+                updateUI(); // Update UI to reflect cleared selections
+
+            }
+            catch (error) {
+                console.error("Error during order simulation:", error);
+                showMessage('Error al procesar la orden. Inténtalo de nuevo.', 'red');
+            }
+        }
+
+
+        /**
+         * Displays a temporary message to the user.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'green', 'red', or 'yellow' for styling.
+         */
+        function showMessage(message, type) {
+            confirmationMessage.textContent = message;
+            confirmationMessage.className = 'message-box show'; // Reset classes
+            confirmationMessage.classList.remove('bg-green-600', 'text-white', 'bg-red-600', 'bg-yellow-600', 'text-black'); // Clear previous colors
+
+            if (type === 'green') confirmationMessage.classList.add('bg-green-600', 'text-white');
+            else if (type === 'red') confirmationMessage.classList.add('bg-red-600', 'text-white');
+            else if (type === 'yellow') confirmationMessage.classList.add('bg-yellow-600', 'text-black');
+
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                confirmationMessage.classList.remove('show');
+                setTimeout(() => { // Small delay to allow transition
+                    confirmationMessage.className = 'message-box hidden';
+                }, 300);
+            }, 5000);
+        }
+
+        /**
+         * Consolidates all UI rendering calls.
+         */
+        function updateUI() {
+            renderPlans(netflixPlans, netflixPlansContainer, 'netflix', 'text-red-500');
+            renderPlans(hboMaxPlans, hboMaxPlansContainer, 'hbo-max', 'text-purple-400');
+            renderPlans(amazonPrimePlans, amazonPrimePlansContainer, 'amazon-prime', 'text-blue-400');
+            renderPlans(disneyPlusPlans, disneyPlusPlansContainer, 'disney-plus', 'text-blue-500');
+            updateSummary();
+        }
+
+        /**
+         * Cycles through service logos in the banner.
+         */
+        function cycleAds() {
+            let currentLogoIndex = 0;
+
+            // Initial display of the first logo
+            if (adLogoElement && serviceLogos.length > 0) {
+                adLogoElement.src = serviceLogos[currentLogoIndex].src;
+                adLogoElement.alt = serviceLogos[currentLogoIndex].alt;
+                adLogoElement.classList.add('active'); // Show the first logo
+            } else {
+                console.warn("Ad logo element not found (ID 'adLogo') or no logos defined.");
+                return; // Exit if no logo element or no logos
+            }
+
+            setInterval(() => {
+                // Fade out current logo
+                adLogoElement.classList.remove('active');
+
+                // Move to the next logo
+                currentLogoIndex = (currentLogoIndex + 1) % serviceLogos.length;
+                const nextLogo = serviceLogos[currentLogoIndex];
+
+                // Update src and alt, then fade in
+                // Using a small timeout to allow fade-out to start before changing src
+                setTimeout(() => {
+                    adLogoElement.src = nextLogo.src;
+                    adLogoElement.alt = nextLogo.alt;
+                    adLogoElement.classList.add('active'); // Fade in the new logo
+                }, 1000); // Matches the CSS transition duration
+            }, 5000); // Change logo every 5 seconds
+        }
+
+        /**
+         * Initializes the main application logic after the DOM is ready and userId is determined.
+         */
+        function initApp() {
+            updateUI(); // Render plans and summary immediately
+            cycleAds(); // Start ads
+
+            // Attach event listeners
+            orderButton.addEventListener('click', handleOrder);
+
+            // Update the WhatsApp proof button's href with the userId
+            if (whatsappProofButton && userId) {
+                // Using a placeholder number for demonstration. Replace with actual number.
+                const whatsappNumber = 'XXXXXXXXXX'; // Ensure this is your actual WhatsApp number
+                whatsappProofButton.href = `https://wa.me/${whatsappNumber}?text=Hola%2C%20acabo%20de%20realizar%20una%20compra%20y%20quiero%20enviar%20mi%20comprobante.%20Mi%20ID%20de%20Usuario%20es%3A%20${userId}`;
+            } else {
+                console.warn("WhatsApp proof button or userId not available. WhatsApp link might not be pre-filled.");
+            }
+        }
+
+        // --- Firebase Initialization and Auth State Listener ---
+        // This runs as soon as the script is parsed.
+        if (Object.keys(firebaseConfig).length > 0) {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // User is signed in
+                    userId = user.uid;
+                    console.log("Firebase user ID:", userId);
+                    userIdDisplay.textContent = `ID de Usuario: ${userId}`;
+                    initApp(); // Call initApp after auth is ready
+                } else {
+                    // No user is signed in, attempt to sign in anonymously
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Firebase Auth Error:", error);
+                        // Fallback to a random ID if anonymous sign-in fails
+                        userId = crypto.randomUUID();
+                        userIdDisplay.textContent = `ID de Usuario (generado): ${userId}`;
+                        console.warn("Using generated user ID due to Firebase Auth failure.");
+                    }
+                    initApp(); // Also call initApp if auth fails (e.g., anonymous sign-in)
+                }
+            });
+        } else {
+            // Demo mode: Firebase config not found
+            console.warn("Firebase configuration not found. Running in demo mode without persistence.");
+            userId = crypto.randomUUID(); // Generate a random ID for demo mode
+            userIdDisplay.textContent = `ID de Usuario (demo): ${userId}`;
+            initApp(); // Call initApp immediately for demo mode
+        }
+    </script>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-white text-center mb-6 sm:mb-10 leading-tight">
+            <i class="fas fa-video text-red-500 mr-2"></i>Tu Plataforma de Streaming Favorita
+        </h1>
+
+        <p id="userIdDisplay" class="text-sm text-gray-500 text-center mb-6"></p>
+
+        <!-- Sección de Publicidad - Con logotipos animados -->
+        <section id="adBanner" class="ad-banner mb-10 p-6 relative">
+            <img id="adLogo" class="ad-logo" src="" alt="Logo de servicio de streaming">
+        </section>
+
+        <!-- Sección de Planes de Streaming -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-white mb-6 text-center">Nuestros Planes Exclusivos</h2>
+
+            <!-- Planes de Netflix -->
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold text-red-500 mb-4 flex items-center justify-center">
+                    Planes Netflix
+                </h3>
+                <div id="netflixPlansContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Netflix plans will be rendered here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- HBO Max Plans -->
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold text-purple-400 mb-4 flex items-center justify-center">
+                    Planes HBO Max
+                </h3>
+                <div id="hboMaxPlansContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- HBO Max plans will be rendered here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Amazon Prime Video Plans -->
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold text-blue-400 mb-4 flex items-center justify-center">
+                    Planes Amazon Prime Video
+                </h3>
+                <div id="amazonPrimePlansContainer" class="grid grid-cols-1 md:grid-cols-1 gap-6">
+                    <!-- Amazon Prime Video plans will be rendered here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Disney+ Plans -->
+            <div>
+                <h3 class="text-2xl font-semibold text-blue-500 mb-4 flex items-center justify-center">
+                    Planes Disney+
+                </h3>
+                <div id="disneyPlusPlansContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Disney+ plans will be rendered here by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Recuadro de PayPal simulado -->
+        <section class="paypal-box mb-12 p-6">
+            <i class="fab fa-paypal"></i>
+            <p class="text-lg">Toda nuestra gestión de pagos se realiza de forma segura a través de PayPal.</p>
+            <p class="text-sm text-gray-400 mt-2">Una vez realizada la orden, recibirás las instrucciones de pago.</p>
+        </section>
+
+        <!-- Sección de Resumen de Compra -->
+        <section class="bg-gray-700 p-6 rounded-lg shadow-lg mb-12">
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Resumen de tu Orden</h2>
+            <div class="flex justify-between items-center py-2 border-b border-gray-600">
+                <span class="text-gray-300">Plan Netflix:</span>
+                <span id="summaryNetflixPlan" class="font-semibold text-white">Ninguno</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-600">
+                <span class="text-gray-300">Plan HBO Max:</span>
+                <span id="summaryHboMaxPlan" class="font-semibold text-white">Ninguno</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-600">
+                <span class="text-gray-300">Plan Amazon Prime:</span>
+                <span id="summaryAmazonPrimePlan" class="font-semibold text-white">Ninguno</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-600">
+                <span class="text-gray-300">Plan Disney+:</span>
+                <span id="summaryDisneyPlusPlan" class="font-semibold text-white">Ninguno</span>
+            </div>
+            <div class="flex justify-between items-center py-2 font-bold text-xl text-green-400">
+                <span>Total:</span>
+                <span id="summaryTotal">$0.00</span>
+            </div>
+            <button id="orderButton" class="order-button disabled:opacity-50 disabled:cursor-not-allowed mt-6">
+                Realizar Orden con PayPal
+            </button>
+            <div id="confirmationMessage" class="message-box hidden"></div>
+        </section>
+
+        <!-- WhatsApp Proof of Payment Section -->
+        <section class="bg-green-700 p-6 rounded-lg shadow-lg mb-12 text-center flex flex-col items-center">
+            <h2 class="text-2xl font-bold text-white mb-4">Envía tu Comprobante de Pago</h2>
+            <p class="text-white mb-4">¡Gracias por tu compra! Para activar tu suscripción, por favor, envíanos el comprobante de pago a través de WhatsApp.</p>
+            <a id="whatsappProofButton" href="https://wa.me/XXXXXXXXXX?text=Hola%2C%20acabo%20de%20realizar%20una%20compra%20y%20quiero%20enviar%20mi%20comprobante.%20Mi%20ID%20de%20Usuario%20es%3A%20" target="_blank" class="whatsapp-button hover:bg-green-600">
+                <i class="fab fa-whatsapp"></i> Enviar Comprobante por WhatsApp
+            </a>
+            <p class="text-sm text-green-100 mt-2">Haz clic para abrir WhatsApp con un mensaje pre-escrito.</p>
+        </section>
+        
+        <!-- Footer con información de contacto y copyright -->
+        <footer class="footer-whatsapp mt-12 p-6">
+            <i class="fab fa-whatsapp"></i>
+            <p class="text-xl text-white">¡Contáctanos por WhatsApp para cualquier consulta!</p>
+            <p class="text-lg text-gray-300 mt-2">
+                <a href="https://wa.me/XXXXXXXXXX" target="_blank" class="hover:underline text-blue-300">
+                    Envíanos un mensaje
+                </a>
+            </p>
+            <p class="copyright-text mt-4">
+                &copy; 2023 Sistema de Ventas y Publicidad Streaming. Todos los derechos reservados.
+            </p>
+        </footer>
+
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
